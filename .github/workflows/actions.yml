@@ -15,7 +15,7 @@ jobs:
         - name: Checkout source code
           uses: actions/checkout@v4
           with: 
-            fetch-depth: 2  # Fetch the last 2 commits
+            fetch-depth: 10  # Fetch the last 10 commits
 
       # This sets the fetch depth to 2, ensuring that the workflow fetches at least the last two commits.
       # This allows git diff HEAD~1 to work correctly by ensuring HEAD~1 is available.
@@ -63,6 +63,8 @@ jobs:
             mkdir -p delta
             echo "Generating delta package.xml"
             sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i .sgdignore 
+            ls -l delta/package  
+          # ls -l delta/package - List contents of delta/package directory for debugging
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
