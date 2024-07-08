@@ -19,7 +19,7 @@ jobs:
 
         - name: Authenticate with salesforce
           run: |
-            echo ${SECRETS.SFDX_AUTH_URL} >. /authfile.txt
+            echo ${{SECRETS.SFDX_AUTH_URL}} >. /authfile.txt
             sfdx force:auth:sfdxurl:store: -f ./authfile.txt --setalias target_poc -s
 
         - name: Deploy to org
