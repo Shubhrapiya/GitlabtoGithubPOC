@@ -56,7 +56,8 @@ jobs:
             git diff --name-only HEAD~1 > changed_files.txt
             echo "::set-output name=files::$(cat changed_files.txt | tr '\n' ' ')"
 
-      # Generate the package.xml for delta files      
+      # Generate the package.xml for delta files  
+       # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
           run: |
             sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i .sgdignore 
