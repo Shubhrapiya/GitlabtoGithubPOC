@@ -31,7 +31,7 @@ jobs:
        # Install PMD
         - name: Install PMD
           run: |
-            PMD_VERSION=`cat PMD/PMD-version.txt`
+            PMD_VERSION=`cat PMD/pmd-version.txt`
             wget https://github.com/PMD/PMD/releases/download/PMD_releases%2F$PMD_VERSION/PMD-bin-$PMD_VERSION.zip
             unzip PMD-bin-$PMD_VERSION.zip -d ~
             mv ~/PMD-bin-$PMD_VERSION ~/PMD
