@@ -50,7 +50,7 @@ jobs:
             echo 'y' | sfdx plugins:install sfdx-git-delta
 
       # Determine changed files  
-        -name: Determine changed files
+        - name: Determine changed files
           run: |
             git fetch origin main
             git diff --name-only HEAD~1 > changed_files.txt
