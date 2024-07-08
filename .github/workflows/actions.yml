@@ -50,11 +50,11 @@ jobs:
             echo 'y' | sfdx plugins:install sfdx-git-delta
 
       # Determine changed files  
-        - name: Determine changed files
-          run: |
-            git fetch origin main
-            git diff --name-only HEAD~1 > changed_files.txt
-            echo "::set-output name=files::$(cat changed_files.txt | tr '\n' ' ')"
+      #  - name: Determine changed files
+      #    run: |
+      #      git fetch origin main
+      #      git diff --name-only HEAD~1 > changed_files.txt
+      #      echo "::set-output name=files::$(cat changed_files.txt | tr '\n' ' ')"
 
       # Generate the package.xml for delta files  
        # Generate the package.xml for delta files     
@@ -68,9 +68,9 @@ jobs:
         - name: Validate Delta components to Salesforce
           if: steps.changes.outputs.files != ''
           run: |
-             sfdx force:source:deploy -c -p delta
-          #sfdx force:source:deploy -x package/package.xml -l NoTestRun -u target_poc -c
-       #sf project deploy validate package/package.xml -l NoTestRun -u target_poc -c
-          # sfdx force:source:deploy -c -p force-app -u target_poc
+             sf project deploy validate package/package.xml -l NoTestRun -u target_poc -c           
+      #sfdx force:source:deploy -x package/package.xml -l NoTestRun -u target_poc -c
+      # sfdx force:source:deploy -c -p force-app -u target_poc
+      # sfdx force:source:deploy -c -p delta
             
             
