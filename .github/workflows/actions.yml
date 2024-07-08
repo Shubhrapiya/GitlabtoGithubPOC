@@ -61,9 +61,14 @@ jobs:
         - name: Generate the package.xml for delta files
           run: |
             mkdir -p delta
+            echo "Generating delta package.xml"
             sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i .sgdignore 
-            echo "--- package.xml generated with added and modified metadata ---"
-            cat delta/package/package.xml
+            if [ -f delta/package/package.xml ]; then
+              echo "--- package.xml generated with added and modified metadata ---"
+              cat delta/package/package.xml
+            else
+              echo "No changes detected or package.xml not created"
+            fi
 
       # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
@@ -73,6 +78,14 @@ jobs:
               sfdx force:source:deploy -x delta/package/package.xml
             else
               echo "No changes to deploy."
-            fi        
-            
+            fi 
+
+        - name: Create deployment reports folder
+          run: mkdir -p deploy_reports
+
+         - name: Upload deployment report
+          uses: actions/upload-artifact@v3
+          with:
+            name: deployment-report
+            path: deploy_reports/    
             
