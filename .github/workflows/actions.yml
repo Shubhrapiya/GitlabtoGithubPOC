@@ -52,15 +52,16 @@ jobs:
       # Generate the package.xml for delta files      
         - name: Generate the package.xml for delta files
           run: |
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . 
+            mkdir delta
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" 
             echo "--- package.xml generated with added and modified metadata ---"
-            cat package/package.xml
+            cat delta/package/package.xml
 
       # Validate Delta components to Salesforce    
         - name: Validate Delta components to Salesforce
           run: |
-            sf project deploy validate package/package.xml -l NoTestRun -u target_poc -c
-          # sfdx force:source:deploy -x package/package.xml -l NoTestRun -u target_poc -c
+             sfdx force:source:deploy -x delta/package/package.xml -l NoTestRun -u target_poc -c
+       #sf project deploy validate package/package.xml -l NoTestRun -u target_poc -c
           # sfdx force:source:deploy -c -p force-app -u target_poc
             
             
