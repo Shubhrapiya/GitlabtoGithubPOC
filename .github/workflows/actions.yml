@@ -1,0 +1,45 @@
+name: Salesforce Deployments
+
+on:
+  push:
+    branches: main
+
+jobs:
+    deploy:
+      runs-on: ubuntu-latest
+
+      steps:
+      
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: install salesforce cli
+          run: |
+            npm install sfdx-cli --global
+
+        - name: Authenticate with salesforce
+          run: |
+            echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
+            sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
+
+      #  - name: Validate and Deploy to org
+      #   run: |
+      #     sfdx force:source:deploy -c -p force-app -u target_poc
+      #    sfdx force:source:deploy -p force-app -u target_poc
+
+        - name: Install the sfdx-git-delta plugin
+          run: |
+            echo 'y' | sfdx plugins:install sfdx-git-delta
+
+        - name: Generate the package.xml for delta files
+          run: |
+            mkdir delta
+            sfdx sgd:source:delta HEAD^ HEAD --output . 
+            echo "--- package.xml generated with added and modified metadata ---"
+            cat delta/package/package.xml
+            
+        - name: Deploy Delta components to Salesforce
+          run: |
+            sf project deploy validate --manifest package/package.xml -l NoTestRun -u target_poc
+# sfdx force:source:deploy -x delta/package/package.xml -c -l NoTestRun -u target_poc
+            
