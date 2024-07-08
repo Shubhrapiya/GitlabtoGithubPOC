@@ -11,22 +11,20 @@ jobs:
 
       steps:
       
+      # Checkout source code
         - name: Checkout source code
           uses: actions/checkout@v4
-
+      
+      # Install salesforce cli
         - name: Install salesforce cli
           run: |
             npm install sfdx-cli --global
 
+      # Authenticate with Salesforce
         - name: Authenticate with Salesforce
           run: |
             echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
             sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
-
-      #  - name: Validate and Deploy to org
-      #   run: |
-      #     sfdx force:source:deploy -c -p force-app -u target_poc
-      #    sfdx force:source:deploy -p force-app -u target_poc
 
        # Install PMD
         - name: Install PMD
@@ -40,20 +38,23 @@ jobs:
       # Run PMD scan
         - name: 'Run PMD scan'
           run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
-              
+
+      # Install the sfdx-git-delta plugin     
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
-            
+
+      # Generate the package.xml for delta files      
         - name: Generate the package.xml for delta files
           run: |
-            mkdir delta
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i .sgdignore
             echo "--- package.xml generated with added and modified metadata ---"
-            cat delta/package/package.xml
-            
-        - name: Deploy Delta components to Salesforce
+            cat package/package.xml
+
+      # Validate Delta components to Salesforce    
+        - name: Validate Delta components to Salesforce
           run: |
-            sf project deploy validate --manifest package/package.xml -l NoTestRun -u target_poc
-# sfdx force:source:deploy -x delta/package/package.xml -c -l NoTestRun -u target_poc
+            sfdx force:source:deploy -x package/package.xml -l NoTestRun -u target_poc -c
+          # sfdx force:source:deploy -c -p force-app -u target_poc
+            
             
