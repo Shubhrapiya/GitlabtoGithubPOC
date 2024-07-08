@@ -2,7 +2,8 @@ name: Salesforce Deployments
 
 on:
   push:
-    branches: main
+    branches: 
+    - main
 
 jobs:
     deploy:
@@ -10,14 +11,14 @@ jobs:
 
       steps:
       
-        - name: Checkout repository
+        - name: Checkout source code
           uses: actions/checkout@v4
 
-        - name: install salesforce cli
+        - name: Install salesforce cli
           run: |
             npm install sfdx-cli --global
 
-        - name: Authenticate with salesforce
+        - name: Authenticate with Salesforce
           run: |
             echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
             sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
@@ -27,10 +28,23 @@ jobs:
       #     sfdx force:source:deploy -c -p force-app -u target_poc
       #    sfdx force:source:deploy -p force-app -u target_poc
 
+       # Install PMD
+        - name: Install PMD
+          run: |
+            PMD_VERSION=`cat pmd/pmd-version.txt`
+            wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F$PMD_VERSION/pmd-bin-$PMD_VERSION.zip
+            unzip pmd-bin-$PMD_VERSION.zip -d ~
+            mv ~/pmd-bin-$PMD_VERSION ~/pmd
+            ~/pmd/bin/run.sh pmd --version
+
+        # Run PMD scan
+        - name: 'Run PMD scan'
+          run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
+
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
-
+            
         - name: Generate the package.xml for delta files
           run: |
             mkdir delta
