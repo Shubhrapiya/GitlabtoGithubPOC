@@ -83,7 +83,7 @@ jobs:
         - name: Create deployment reports folder
           run: mkdir -p deploy_reports
 
-         - name: Upload deployment report
+        - name: Upload deployment report
           uses: actions/upload-artifact@v3
           with:
             name: deployment-report
