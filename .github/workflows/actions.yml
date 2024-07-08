@@ -52,7 +52,7 @@ jobs:
       # Generate the package.xml for delta files      
         - name: Generate the package.xml for delta files
           run: |
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i 
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . 
             echo "--- package.xml generated with added and modified metadata ---"
             cat package/package.xml
 
