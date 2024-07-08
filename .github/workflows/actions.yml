@@ -31,16 +31,16 @@ jobs:
        # Install PMD
         - name: Install PMD
           run: |
-            PMD_VERSION=`cat PMD/pmd-version.txt`
-            wget https://github.com/PMD/PMD/releases/download/PMD_releases%2F$PMD_VERSION/PMD-bin-$PMD_VERSION.zip
-            unzip PMD-bin-$PMD_VERSION.zip -d ~
-            mv ~/PMD-bin-$PMD_VERSION ~/PMD
-            ~/PMD/bin/run.sh PMD --version
+            PMD_VERSION=`cat pmd/pmd-version.txt`
+                wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F$PMD_VERSION/pmd-bin-$PMD_VERSION.zip
+                unzip pmd-bin-$PMD_VERSION.zip -d ~
+                mv ~/pmd-bin-$PMD_VERSION ~/pmd
+                ~/pmd/bin/run.sh pmd --version
 
-        # Run PMD scan
+      # Run PMD scan
         - name: 'Run PMD scan'
-          run: ~/PMD/bin/run.sh PMD -d force-app -R PMD/ruleset.xml -f text
-
+          run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
+              
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
