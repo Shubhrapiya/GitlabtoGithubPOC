@@ -14,6 +14,10 @@ jobs:
       # Checkout source code
         - name: Checkout source code
           uses: actions/checkout@v4
+          with: 
+            fetch-depth: 2  # Fetch the last 2 commits
+      # This sets the fetch depth to 2, ensuring that the workflow fetches at least the last two commits.
+      # This allows git diff HEAD~1 to work correctly by ensuring HEAD~1 is available.
       
       # Install salesforce cli
         - name: Install salesforce cli
