@@ -47,7 +47,7 @@ jobs:
 
       # Upload PMD Report
         - name: Upload PMD Report
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: pmd-report
             path: pmd/pmd-report.txt
