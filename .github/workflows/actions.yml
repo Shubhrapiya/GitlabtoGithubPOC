@@ -81,6 +81,7 @@ jobs:
             else
               echo "No changes to deploy."
             fi 
+          continue-on-error: true
 
       #Artifact of delta and deployment report  
         - name: List deploy_reports directory
