@@ -55,7 +55,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~2" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -l delta/package  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -72,11 +72,11 @@ jobs:
     # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
-              ls
-              cd force-app/main/default/profiles
-              awk  -i inplace '/<userPermissions>/{f=1} !f; /<\/userPermissions>/{f=0}' *.profile-meta.xml
-              cd ../../..
-              ls
+            ls
+            cd force-app/main/default/profiles
+            awk  -i inplace '/<userPermissions>/{f=1} !f; /<\/userPermissions>/{f=0}' *.profile-meta.xml
+            cd ../../..
+            ls
             if [ -f delta/package/package.xml ]; then
               sfdx force:source:deploy -x delta/package/package.xml --checkonly 
               sfdx force:source:deploy -x delta/package/package.xml 
