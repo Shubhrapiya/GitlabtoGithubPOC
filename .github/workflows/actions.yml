@@ -73,9 +73,9 @@ jobs:
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             ls
-            cd delta/package/force-app/main/default/profiles
+            cd delta/force-app/main/default/profiles
             awk  -i inplace '/<userPermissions>/{f=1} !f; /<\/userPermissions>/{f=0}' *.profile-meta.xml
-            cd ../../../../../
+            cd ../../../../
             ls
             if [ -f delta/package/package.xml ]; then
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
