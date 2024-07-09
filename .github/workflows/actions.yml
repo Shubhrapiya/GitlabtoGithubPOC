@@ -62,7 +62,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~3" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~4" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -R delta  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -75,9 +75,9 @@ jobs:
     # Prepare destructive changes
         - name: Prepare destructive changes
           run: |
-            if [ -f destructiveChanges.xml ]; then
-              cp destructiveChanges.xml delta/destructiveChanges.xml
-              cp package.xml delta/packages.xml
+            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
+              cp destructiveChanges.xml delta/destructiveChanges/destructiveChanges.xml
+              cp package.xml delta/package/package.xml
               ls -R delta          
             else
               echo "No Destructive changes detected"
