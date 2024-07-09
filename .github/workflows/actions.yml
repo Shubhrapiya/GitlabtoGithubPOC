@@ -78,6 +78,8 @@ jobs:
             if [ -f destructiveChanges.xml ]; then
               cp destructiveChanges.xml delta/destructiveChanges.xml
               cp package.xml delta/packages.xml
+              ls -R delta  
+        # List contents of the delta directory for debugging            
             else
               echo "No Destructive changes detected"
             fi
