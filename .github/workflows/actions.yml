@@ -76,13 +76,12 @@ jobs:
             else
               echo "No changes to deploy."
             fi 
+        - name: List deploy_reports directory
+          run: ls -R deploy_reports
 
         - name: Upload deployment report
           uses: actions/upload-artifact@v3
           with:
             name: deployment-report
-            path: deploy_reports/   
-
-        - name: List deploy_reports directory
-          run: ls -R deploy_reports 
+            path: deploy_reports/    
             
