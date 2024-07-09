@@ -5,12 +5,9 @@
  * @last modified on  : 07-09-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
-public class POCShubhClass {
+public class POCClassdelete1 {
 
-//Testing done on 09-07-2024
-
-//Testing done by Shubhra on 09-07-2024
-
-//testing for poc gitlab to github
+//Testing done on 08-07-2024
+//Testing done by shubh 08-07-2024
 
 }
