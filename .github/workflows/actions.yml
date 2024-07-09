@@ -75,7 +75,7 @@ jobs:
             ls
             cd delta/force-app/main/default/profiles
             awk  -i inplace '/<userPermissions>/{f=1} !f; /<\/userPermissions>/{f=0}' *.profile-meta.xml
-            cd ../../../../
+            cd ../../../../../
             ls
             if [ -f delta/package/package.xml ]; then
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
@@ -84,7 +84,7 @@ jobs:
               sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
             fi
             else
-              echo "No changes to deploy."
+              echo "No destructive changes to deploy."
             fi 
           continue-on-error: true
 
