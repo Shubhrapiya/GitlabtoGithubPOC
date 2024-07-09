@@ -49,14 +49,6 @@ jobs:
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
 
-      # Determine changed files  
-      #  - name: Determine changed files
-      #    run: |
-      #      git fetch origin main
-      #      git diff --name-only HEAD~1 > changed_files.txt
-      #      echo "::set-output name=files::$(cat changed_files.txt | tr '\n' ' ')"
-
-      # Generate the package.xml for delta files  
        # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
           run: |
@@ -72,6 +64,10 @@ jobs:
             fi
     # ls -l delta/package - List contents of delta/package directory for debugging
 
+    # Create deployment reports folder
+        - name: Create deployment reports folder
+          run: mkdir -p deploy_reports
+
       # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
@@ -81,9 +77,6 @@ jobs:
             else
               echo "No changes to deploy."
             fi 
-
-        - name: Create deployment reports folder
-          run: mkdir -p deploy_reports
 
         - name: Upload deployment report
           uses: actions/upload-artifact@v3
