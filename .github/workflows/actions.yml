@@ -55,7 +55,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore --verbose
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -l delta/package  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -73,10 +73,10 @@ jobs:
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             if [ -f delta/package/package.xml ]; then
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly --verbose> deploy_reports/checkonly_report.txt
-              sfdx force:source:deploy -x delta/package/package.xml --verbose> deploy_reports/deployment_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
             if [ -f delta/destructiveChanges.xml ]; then
-              sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarning --verbose >> deploy_reports/deployment_report.txt
+              sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarning >> deploy_reports/deployment_report.txt
             fi
             else
               echo "No changes to deploy."
