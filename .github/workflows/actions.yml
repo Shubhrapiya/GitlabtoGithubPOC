@@ -55,7 +55,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~2" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -l delta/package  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -69,14 +69,25 @@ jobs:
         - name: Create deployment reports folder
           run: mkdir -p deploy_reports
 
+    # Prepare destructive changes
+        - name: Prepare destructive changes
+          run: |
+            if [ -f destructiveChanges.xml ]; then
+              cp destructiveChanges.xml delta/destructiveChanges.xml
+              cp package.xml delta/packages.xml
+            else
+              echo "No Destructive changes detected"
+          continue-on-error: true
+
+
     # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             if [ -f delta/package/package.xml ]; then
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
               sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
-            if [ -f delta/destructiveChanges.xml ]; then
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+            if [ -f delta/destructiveChanges ]; then
+              sfdx force:source:deploy -d delta -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
             fi
             else
               echo "No destructive changes to deploy."
