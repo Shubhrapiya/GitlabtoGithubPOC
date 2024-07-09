@@ -45,6 +45,13 @@ jobs:
         - name: 'Run PMD scan'
           run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
 
+      # Upload PMD Report
+        - name: Upload PMD Report
+          uses: actions/upload-artifact@v3
+          with:
+            name: pmd-report
+            path: pmd/pmd-report.txt
+
       # Install the sfdx-git-delta plugin     
         - name: Install the sfdx-git-delta plugin
           run: |
