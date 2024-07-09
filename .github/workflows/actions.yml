@@ -78,7 +78,7 @@ jobs:
               echo "No changes to deploy."
             fi 
 
-      #Artifact    
+      #Artifact of delta and deployment report  
         - name: List deploy_reports directory
           run: ls -R deploy_reports
 
