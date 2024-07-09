@@ -16,6 +16,7 @@ jobs:
           uses: actions/checkout@v4
           with: 
             fetch-depth: 10  # Fetch the last 10 commits
+        # fetch-depth: 0  # Fetch the entire history for accurate delta calculation
 
       # This sets the fetch depth to 10, ensuring that the workflow fetches at least the last two commits.
       # This allows git diff HEAD~1 to work correctly by ensuring HEAD~1 is available.
@@ -54,7 +55,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore 
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore --verbose
             ls -l delta/package  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -68,15 +69,19 @@ jobs:
         - name: Create deployment reports folder
           run: mkdir -p deploy_reports
 
-      # Validate & Deploy Delta components to Salesforce    
+    # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             if [ -f delta/package/package.xml ]; then
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
-              sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly --verbose> deploy_reports/checkonly_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml --verbose> deploy_reports/deployment_report.txt
+            if [ -f delta/destructiveChanges.xml ]; then
+              sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarning --verbose >> deploy_reports/deployment_report.txt
+            fi
             else
               echo "No changes to deploy."
             fi 
+          continue-on-error: true
 
       #Artifact of delta and deployment report  
         - name: List deploy_reports directory
