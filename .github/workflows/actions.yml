@@ -49,7 +49,7 @@ jobs:
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
-            
+
        # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
           run: |
@@ -72,6 +72,13 @@ jobs:
     # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
+            if [ -f force-app/main/default/profiles ]; then
+              ls
+              cd force-app/main/default/profiles
+              awk  -i inplace '/<userPermissions>/{f=1} !f; /<\/userPermissions>/{f=0}' *.profile-meta.xml
+              cd ../../..
+              ls
+            fi
             if [ -f delta/package/package.xml ]; then
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
               sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
