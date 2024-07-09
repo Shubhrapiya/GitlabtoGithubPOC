@@ -52,13 +52,12 @@ jobs:
        # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
           run: |
-            mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore 
-            ls -l delta/package  
-            if [ -f delta/package/package.xml ]; then
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output . --ignore-whitespace -d -i .sgdignore 
+            ls -l package  
+            if [ -f package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
-              cat delta/package/package.xml
+              cat package/package.xml
             else
               echo "No changes detected or package.xml not created"
             fi
@@ -71,9 +70,9 @@ jobs:
       # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
-            if [ -f delta/package/package.xml ]; then
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
-              sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
+            if [ -f package/package.xml ]; then
+              sfdx force:source:deploy -x package/package.xml --checkonly > deploy_reports/checkonly_report.txt
+              sfdx force:source:deploy -x package/package.xml > deploy_reports/deployment_report.txt
             else
               echo "No changes to deploy."
             fi 
@@ -82,5 +81,8 @@ jobs:
           uses: actions/upload-artifact@v3
           with:
             name: deployment-report
-            path: deploy_reports/    
+            path: deploy_reports/   
+
+        - name: List deploy_reports directory
+          run: ls -R deploy_reports 
             
