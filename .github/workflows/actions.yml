@@ -91,7 +91,6 @@ jobs:
             fi
             else
               echo "No destructive changes to deploy."
-            fi 
           continue-on-error: true
 
       #Artifact of delta and deployment report  
