@@ -73,9 +73,9 @@ jobs:
     # ls -l delta/package - List contents of delta/package directory for debugging
 
     # Prepare destructive changes
+    # Check if destructiveChanges.xml exists and copy to delta directory
         - name: Prepare destructive changes
           run: |
-# Check if destructiveChanges.xml exists and copy to delta directory
             if [ -f destructiveChanges.xml ]; then
               echo "Destructive changes detected."
               cp destructiveChanges.xml delta/destructiveChanges.xml
