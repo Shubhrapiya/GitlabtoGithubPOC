@@ -97,7 +97,7 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Deploying destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -u target_poc -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
             else
               echo "No destructive changes to deploy."
             fi
