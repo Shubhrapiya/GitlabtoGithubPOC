@@ -62,7 +62,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~8" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~10" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -R delta  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -87,6 +87,7 @@ jobs:
             else
               echo "No changes detected or package.xml not created."
             fi
+          continue-on-error: true
 
     # Destructive Changes
         - name: Destructive Changes
@@ -96,7 +97,7 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Deploying destructive changes..."
-              sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -u target_poc -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
             else
               echo "No destructive changes to deploy."
             fi
