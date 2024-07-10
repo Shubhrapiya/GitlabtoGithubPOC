@@ -62,8 +62,8 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            git diff --name-only HEAD..HEAD~20
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~20" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            git diff --name-only HEAD..HEAD~1
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
             cd delta
             ls -ltr
             if [ -f delta/package/package.xml ]; then
