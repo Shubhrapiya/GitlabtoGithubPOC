@@ -15,8 +15,8 @@ jobs:
         - name: Checkout source code
           uses: actions/checkout@v4
           with: 
-            fetch-depth: 10  # Fetch the last 10 commits
-        # fetch-depth: 0  # Fetch the entire history for accurate delta calculation
+           fetch-depth: 0  # Fetch the entire history for accurate delta calculation
+        #fetch-depth: 10  # Fetch the last 10 commits
 
       # This sets the fetch depth to 10, ensuring that the workflow fetches at least the last two commits.
       # This allows git diff HEAD~1 to work correctly by ensuring HEAD~1 is available.
@@ -75,9 +75,11 @@ jobs:
     # Prepare destructive changes
         - name: Prepare destructive changes
           run: |
-            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
-              cp destructiveChanges.xml delta/destructiveChanges/destructiveChanges.xml
-              cp package.xml delta/package/package.xml
+# Check if destructiveChanges.xml exists and copy to delta directory
+            if [ -f destructiveChanges.xml ]; then
+              echo "Destructive changes detected."
+              cp destructiveChanges.xml delta/destructiveChanges.xml
+              cp package.xml delta/package.xml
               ls -R delta          
             else
               echo "No Destructive changes detected"
@@ -92,13 +94,18 @@ jobs:
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             if [ -f delta/package/package.xml ]; then
+              echo "Validating delta components..."
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
+              echo "Deploying delta components..."
               sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
-              if [ -f delta/destructiveChanges ]; then
-                sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+              if [ -f delta/destructiveChanges.xml ]; then
+                echo "Deploying destructive changes..."
+                sfdx force:source:deploy -d delta/destructiveChanges.xml -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+              else
+                echo "No destructive changes to deploy."
               fi
             else
-              echo "No changes to deploy."
+              echo "No changes detected or package.xml not created."
             fi
           continue-on-error: true
 
