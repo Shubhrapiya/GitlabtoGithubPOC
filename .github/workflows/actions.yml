@@ -62,8 +62,10 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
+            git diff --name-only HEAD..HEAD~7
             sfdx sgd:source:delta --to "HEAD" --from "HEAD~7" --output "./delta" --ignore-whitespace -d -i .sgdignore
-            ls -R delta  
+            cd delta
+            ls -ltr
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
@@ -73,17 +75,17 @@ jobs:
     # ls -l delta/package - List contents of delta/package directory for debugging
 
     # Create deployment reports folder
-        - name: Create deployment reports folder
-          run: mkdir -p deploy_reports
+    #    - name: Create deployment reports folder
+    #      run: mkdir -p deploy_reports
 
     # Validate & Deploy Delta components to Salesforce    
         - name: Validate & Deploy Delta components to Salesforce
           run: |
             if [ -f delta/package/package.xml ]; then
               echo "Validating delta components..."
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly 
               echo "Deploying delta components..."
-              sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
+              sfdx force:source:deploy -x delta/package/package.xml 
             else
               echo "No changes detected or package.xml not created."
             fi
@@ -97,24 +99,8 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Deploying destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings 
             else
               echo "No destructive changes to deploy."
             fi
           continue-on-error: true
-
-      #Artifact of delta and deployment report  
-        - name: List deploy_reports directory
-          run: ls -R deploy_reports
-
-        - name: Upload deployment report
-          uses: actions/upload-artifact@v4
-          with:
-            name: deployment-report
-            path: deploy_reports/    
-
-        - name: Upload delta folder
-          uses: actions/upload-artifact@v4
-          with:
-            name: delta
-            path: delta/
