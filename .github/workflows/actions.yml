@@ -62,7 +62,7 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~7" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~8" --output "./delta" --ignore-whitespace -d -i .sgdignore
             ls -R delta  
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
@@ -71,20 +71,6 @@ jobs:
               echo "No changes detected or package.xml not created"
             fi
     # ls -l delta/package - List contents of delta/package directory for debugging
-
-    # Prepare destructive changes
-    # Check if destructiveChanges.xml exists and copy to delta directory
-        - name: Prepare destructive changes
-          run: |
-            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
-              echo "Destructive changes detected."
-              cp destructiveChanges.xml delta/destructiveChanges/destructiveChanges.xml
-              cp package.xml delta/package/package.xml
-              ls -R delta          
-            else
-              echo "No Destructive changes detected"
-            fi
-          continue-on-error: true
 
     # Create deployment reports folder
         - name: Create deployment reports folder
@@ -98,14 +84,21 @@ jobs:
               sfdx force:source:deploy -x delta/package/package.xml --checkonly > deploy_reports/checkonly_report.txt
               echo "Deploying delta components..."
               sfdx force:source:deploy -x delta/package/package.xml > deploy_reports/deployment_report.txt
-              if [ delta/destructiveChanges/destructiveChanges.xml ]; then
-                echo "Deploying destructive changes..."
-                sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
-              else
-                echo "No destructive changes to deploy."
-              fi
             else
               echo "No changes detected or package.xml not created."
+            fi
+
+    # Destructive Changes
+        - name: Destructive Changes
+          run: |
+            echo "--- destructiveChanges.xml generated with deleted metadata ---"
+            cat delta/destructiveChanges/destructiveChanges.xml
+            echo
+            if [ delta/destructiveChanges/destructiveChanges.xml ]; then
+              echo "Deploying destructive changes..."
+              sfdx force:source:deploy -d delta/destructiveChanges -w 10 --ignorewarnings > deploy_reports/deployment_report.txt
+            else
+              echo "No destructive changes to deploy."
             fi
           continue-on-error: true
 
