@@ -96,7 +96,8 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d -x delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
+          #sfdx force:mdapi:deploy -d -x delta/destructiveChanges -w 10 --ignorewarnings --checkonly
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
             else
               echo "No destructive changes to deploy."
             fi
