@@ -43,18 +43,18 @@ jobs:
                 mv ~/pmd-bin-$PMD_VERSION ~/pmd
                 ~/pmd/bin/run.sh pmd --version
 
-      # Run PMD scan
+       # Run PMD scan
         - name: 'Run PMD scan'
           run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
 
-      # Upload PMD Report
+       # Upload PMD Report
         - name: Upload PMD Report
           uses: actions/upload-artifact@v4
           with:
             name: pmd-report
             path: pmd/pmd-report.txt
 
-      # Install the sfdx-git-delta plugin     
+       # Install the sfdx-git-delta plugin     
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
@@ -72,13 +72,13 @@ jobs:
             else
               echo "No changes detected or package.xml not created"
             fi
-    # ls -l delta/package - List contents of delta/package directory for debugging
+       # ls -l delta/package - List contents of delta/package directory for debugging
 
-      # Create deployment reports folder
+       # Create deployment reports folder
         - name: Create deployment reports folder
           run: mkdir -p deploy_reports
 
-    # Run validation against the org    
+       # Run validation against the org    
         - name: Run validation against the org
           run: |
             if [ -f delta/package/package.xml ]; then
@@ -88,7 +88,7 @@ jobs:
               echo "No changes detected or package.xml not created."
             fi
 
-      # Destructive Changes
+       # Destructive Changes
         - name: Destructive Changes
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
@@ -102,7 +102,7 @@ jobs:
             fi
           continue-on-error: true
 
-      #Artifact of delta report    
+       #Artifact of delta report    
         - name: Upload delta folder
           uses: actions/upload-artifact@v4
           with:
@@ -110,35 +110,35 @@ jobs:
             path: delta/
 
     deploy_delta_code:
-    #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
+       #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
        if: github.event.pull_request.merged == true
        runs-on: ubuntu-latest
-    #needs: run_pmd_and_validate
+       needs: run_pmd_and_validate
 
        steps:
-      # Checkout source code
+       # Checkout source code
         - name: Checkout source code
           uses: actions/checkout@v4
           with: 
            fetch-depth: 0
 
-      # Install salesforce cli
+       # Install salesforce cli
         - name: Install salesforce cli
           run: |
             npm install sfdx-cli --global
 
-      # Authenticate with Salesforce
+       # Authenticate with Salesforce
         - name: Authenticate with Salesforce
           run: |
             echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
             sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
 
-      # Install the sfdx-git-delta plugin     
+       # Install the sfdx-git-delta plugin     
         - name: Install the sfdx-git-delta plugin
           run: |
             echo 'y' | sfdx plugins:install sfdx-git-delta
 
-      # Generate the package.xml for delta files     
+       # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
           run: |
             mkdir -p delta
@@ -152,7 +152,7 @@ jobs:
               echo "No changes detected or package.xml not created"
             fi
 
-      # Deploy delta package    
+       # Deploy delta code    
         - name: Deploy delta package
           run: |
             if [ -f delta/package/package.xml ]; then
@@ -163,7 +163,7 @@ jobs:
             fi
           continue-on-error: true
 
-      # Deploy Destructive Changes
+       # Deploy Destructive Changes
         - name: Destructive Changes
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
