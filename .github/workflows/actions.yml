@@ -87,13 +87,6 @@ jobs:
             else
               echo "No changes detected or package.xml not created."
             fi
-    
-    #Artifact of delta report    
-        - name: Upload delta folder
-          uses: actions/upload-artifact@v4
-          with:
-            name: delta
-            path: delta/
 
     # Destructive Changes
         - name: Destructive Changes
@@ -103,11 +96,18 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d -c delta/destructiveChanges -w 10 --ignorewarnings 
+              sfdx force:mdapi:deploy -d -c delta/destructiveChanges/destructiveChanges.xml -w 10 --ignorewarnings 
             else
               echo "No destructive changes to deploy."
             fi
           continue-on-error: true
+
+      #Artifact of delta report    
+        - name: Upload delta folder
+          uses: actions/upload-artifact@v4
+          with:
+            name: delta
+            path: delta/
 
     deploy_delta_code:
     #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
