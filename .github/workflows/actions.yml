@@ -64,8 +64,8 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            git diff --name-only HEAD..HEAD~2
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~2" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            git diff --name-only HEAD..origin/develop
+            sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
@@ -118,8 +118,8 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            git diff --name-only HEAD..HEAD~2
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~2" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            git diff --name-only HEAD..HEAD~1
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
