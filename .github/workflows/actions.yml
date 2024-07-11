@@ -5,9 +5,9 @@ on:
     types: [edited, reopened, ready_for_review, synchronize, opened]
     branches: 
       - develop
-  push:
-    branches:
-      - develop
+      
+  pull_request_target:
+    types: [closed]
 
 jobs:
     run_pmd_and_validate:
