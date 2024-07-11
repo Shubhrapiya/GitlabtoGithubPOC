@@ -108,6 +108,10 @@ jobs:
             echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
             sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
 
+      # Install the sfdx-git-delta plugin     
+        - name: Install the sfdx-git-delta plugin
+          run: |
+            echo 'y' | sfdx plugins:install sfdx-git-delta
 
       # Generate the package.xml for delta files     
         - name: Generate the package.xml for delta files
