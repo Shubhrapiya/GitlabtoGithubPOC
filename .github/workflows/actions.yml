@@ -88,7 +88,7 @@ jobs:
               echo "No changes detected or package.xml not created."
             fi
 
-    # Destructive Changes
+      # Destructive Changes
         - name: Destructive Changes
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
@@ -96,7 +96,7 @@ jobs:
             echo
             if [ delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d -c delta/destructiveChanges/destructiveChanges.xml -w 10 --ignorewarnings 
+              sfdx force:mdapi:deploy -d -x delta/destructiveChanges/destructiveChanges.xml -w 10 --ignorewarnings --checkonly  
             else
               echo "No destructive changes to deploy."
             fi
@@ -163,7 +163,7 @@ jobs:
             fi
           continue-on-error: true
 
-    # Destructive Changes
+      # Deploy Destructive Changes
         - name: Destructive Changes
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
