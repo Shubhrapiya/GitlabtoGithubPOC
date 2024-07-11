@@ -74,6 +74,10 @@ jobs:
             fi
     # ls -l delta/package - List contents of delta/package directory for debugging
 
+      # Create deployment reports folder
+        - name: Create deployment reports folder
+          run: mkdir -p deploy_reports
+
     # Run validation against the org    
         - name: Run validation against the org
           run: |
@@ -83,7 +87,28 @@ jobs:
             else
               echo "No changes detected or package.xml not created."
             fi
-    
+
+      # Destructive Changes
+        - name: Destructive Changes
+          run: |
+            echo "--- destructiveChanges.xml generated with deleted metadata ---"
+            cat delta/destructiveChanges/destructiveChanges.xml
+            echo
+            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
+              echo "Validating destructive changes..."
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
+            else
+              echo "No destructive changes to deploy."
+            fi
+          continue-on-error: true
+
+      #Artifact of delta report    
+        - name: Upload delta folder
+          uses: actions/upload-artifact@v4
+          with:
+            name: delta
+            path: delta/
+
     deploy_delta_code:
     #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
        if: github.event.pull_request.merged == true
@@ -138,13 +163,13 @@ jobs:
             fi
           continue-on-error: true
 
-    # Destructive Changes
+      # Deploy Destructive Changes
         - name: Destructive Changes
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
             cat delta/destructiveChanges/destructiveChanges.xml
             echo
-            if [ delta/destructiveChanges/destructiveChanges.xml ]; then
+            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Deploying destructive changes..."
               sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings 
             else
