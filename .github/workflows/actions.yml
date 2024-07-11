@@ -88,7 +88,7 @@ jobs:
     #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
        if: github.event.pull_request.merged == true
        runs-on: ubuntu-latest
-       needs: run_pmd_and_validate
+    #needs: run_pmd_and_validate
 
        steps:
       # Checkout source code
@@ -97,11 +97,31 @@ jobs:
           with: 
            fetch-depth: 0
 
+      # Install salesforce cli
+        - name: Install salesforce cli
+          run: |
+            npm install sfdx-cli --global
+
       # Authenticate with Salesforce
         - name: Authenticate with Salesforce
           run: |
             echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
             sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
+
+
+      # Generate the package.xml for delta files     
+        - name: Generate the package.xml for delta files
+          run: |
+            mkdir -p delta
+            echo "Generating delta package.xml"
+            git diff --name-only HEAD..HEAD~2
+            sfdx sgd:source:delta --to "HEAD" --from "HEAD~2" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            if [ -f delta/package/package.xml ]; then
+              echo "--- package.xml generated with added and modified metadata ---"
+              cat delta/package/package.xml
+            else
+              echo "No changes detected or package.xml not created"
+            fi
 
       # Deploy delta package    
         - name: Deploy delta package
