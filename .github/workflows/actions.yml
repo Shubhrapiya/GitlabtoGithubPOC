@@ -94,9 +94,8 @@ jobs:
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
             cat delta/destructiveChanges/destructiveChanges.xml
             echo
-            if [ delta/destructiveChanges/destructiveChanges.xml ]; then
+            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-          #sfdx force:mdapi:deploy -d -x delta/destructiveChanges -w 10 --ignorewarnings --checkonly
               sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
             else
               echo "No destructive changes to deploy."
@@ -170,7 +169,7 @@ jobs:
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
             cat delta/destructiveChanges/destructiveChanges.xml
             echo
-            if [ delta/destructiveChanges/destructiveChanges.xml ]; then
+            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Deploying destructive changes..."
               sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings 
             else
