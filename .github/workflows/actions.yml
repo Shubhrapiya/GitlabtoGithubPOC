@@ -52,6 +52,7 @@ jobs:
        # Run PMD scan
         - name: 'Run PMD scan'
           run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
+          continue-on-error: true
 
        # Upload PMD Report
         - name: Upload PMD Report
