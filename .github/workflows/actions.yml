@@ -34,11 +34,6 @@ jobs:
           run: |
             npm install sfdx-cli --global
 
-      # Install jq
-        - name: Install jq
-          run: |
-            sudo apt-get install jq
-
       # Authenticate with Salesforce
         - name: Authenticate with Salesforce
           run: |
