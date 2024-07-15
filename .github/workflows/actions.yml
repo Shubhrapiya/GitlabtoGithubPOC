@@ -5,6 +5,8 @@ on:
     types: [edited, reopened, ready_for_review, synchronize, opened]
     branches: 
       - develop
+      - intmerge
+      - svtmerge
 
   pull_request_target:
     types: [closed]
@@ -13,7 +15,11 @@ jobs:
     run_pmd_and_validate:
       if: github.event_name == 'pull_request'
       runs-on: ubuntu-latest
-
+      env:
+        BRANCH_NAME: ${{ github.head_ref }}
+      # It dynamically fetches the branch name of the pull request. When a pull request is created, 
+      # the head_ref contains the name of the branch from which the PR was created.
+      
       steps:
       
       # Checkout source code
@@ -64,8 +70,8 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            git diff --name-only HEAD..origin/develop
-            sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            git diff --name-only HEAD..origin/$BRANCH_NAME
+            sfdx sgd:source:delta --to "HEAD" --from "origin/$BRANCH_NAME" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
@@ -75,15 +81,18 @@ jobs:
        # ls -l delta/package - List contents of delta/package directory for debugging
 
        # Create deployment reports folder
-        - name: Create deployment reports folder
-          run: mkdir -p deploy_reports
+       # - name: Create deployment reports folder
+       #   run: mkdir -p deploy_reports
 
        # Run validation against the org    
         - name: Run validation against the org
           run: |
             if [ -f delta/package/package.xml ]; then
               echo "Validating delta components..."
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly  
+              PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+              class=$(echo $PR_DESCRIPTION | grep -E ^TestList | cut -d" " -f2)
+              echo $class
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunSpecifiedTests -r $class 
             else
               echo "No changes detected or package.xml not created."
             fi
