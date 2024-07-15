@@ -70,10 +70,8 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-          #git diff --name-only HEAD..origin/$BRANCH_NAME
             git diff --name-only HEAD..origin/develop
-          #sfdx sgd:source:delta --to "HEAD" --from "origin/$BRANCH_NAME" --output "./delta" --ignore-whitespace -d -i .sgdignore
-           sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
+            sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
