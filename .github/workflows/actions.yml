@@ -90,9 +90,9 @@ jobs:
             if [ -f delta/package/package.xml ]; then
               echo "Validating delta components..."
               PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
-              if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]] then
+              if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]]; then
                 sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunLocalTests
-              elif [[ $PR_DESCRIPTION = *"TestList"* ]] then
+              elif [[ $PR_DESCRIPTION = *"TestList"* ]]; then
                 class=$(echo $PR_DESCRIPTION | grep -E ^TestList | cut -d" " -f2)
                 echo $class > testclass.csv 
                 cat testclass.csv
