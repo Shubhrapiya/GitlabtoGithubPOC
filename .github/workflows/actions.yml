@@ -15,8 +15,8 @@ jobs:
     run_pmd_and_validate:
       if: github.event_name == 'pull_request'
       runs-on: ubuntu-latest
-      env:
-        BRANCH_NAME: ${{ github.head_ref }}
+      #env:
+        #BRANCH_NAME: ${{ github.head_ref }}
       # It dynamically fetches the branch name of the pull request. When a pull request is created, 
       # the head_ref contains the name of the branch from which the PR was created.
       
@@ -70,8 +70,10 @@ jobs:
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
-            git diff --name-only HEAD..origin/$BRANCH_NAME
-            sfdx sgd:source:delta --to "HEAD" --from "origin/$BRANCH_NAME" --output "./delta" --ignore-whitespace -d -i .sgdignore
+          #git diff --name-only HEAD..origin/$BRANCH_NAME
+            git diff --name-only HEAD..origin/develop
+          #sfdx sgd:source:delta --to "HEAD" --from "origin/$BRANCH_NAME" --output "./delta" --ignore-whitespace -d -i .sgdignore
+           sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
