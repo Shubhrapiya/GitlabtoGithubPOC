@@ -2,18 +2,18 @@ name: Salesforce Deployments
 
 on:
   pull_request:
-    types: [edited, reopened, ready_for_review, synchronize, opened, closed]
+    types: [edited, reopened, ready_for_review, synchronize, opened]
     branches: 
       - develop
       - intmerge
       - svtmerge
 
-  #pull_request_target:
-    #types: [closed]
+  pull_request_target:
+    types: [closed]
 
 jobs:
     run_pmd_and_validate:
-      if: github.event_name == 'pull_request' && github.event.action != 'closed'
+      if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.ref != 'refs/heads/main'
       runs-on: ubuntu-latest
       #env:
         #BRANCH_NAME: ${{ github.head_ref }}
@@ -129,7 +129,7 @@ jobs:
     deploy_delta_code:
        #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
        #if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-       if: github.event.pull_request.merged == true
+       if: github.event.pull_request.merged == true && github.ref != 'refs/heads/main'
        runs-on: ubuntu-latest
 
        steps:
