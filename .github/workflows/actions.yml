@@ -113,7 +113,14 @@ jobs:
             echo
             if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
+              PR_DESTRUCTIVE=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+              if [[ $PR_DESTRUCTIVE = *"DestructiveTest"* ]]; then
+                classdestructive=$(echo $PR_DESTRUCTIVE | grep -E ^DestructiveTest | cut -d" " -f2)
+                echo $classdestructive  
+                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly --testlevel RunSpecifiedTests -r $classdestructive
+              elif [[ $PR_DESTRUCTIVE != *"DestructiveTest"* ]]; then
+                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly
+              fi
             else
               echo "No destructive changes to deploy."
             fi
