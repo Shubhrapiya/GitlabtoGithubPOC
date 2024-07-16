@@ -68,28 +68,27 @@ jobs:
 
        # Generate the package.xml of delta files for validation      
         - name: Generate the package.xml for delta files
+          id: generate_delta
           run: |
             mkdir -p delta
             echo "Generating delta package.xml"
             git diff --name-only HEAD..origin/develop
             sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
             if [ -f delta/package/package.xml ]; then
+              echo "has_changes=true" >> $GITHUB_ENV
               echo "--- package.xml generated with added and modified metadata ---"
               cat delta/package/package.xml
             else
+              echo "has_changes=false" >> $GITHUB_ENV
               echo "No changes detected or package.xml not created"
             fi
-       # ls -l delta/package - List contents of delta/package directory for debugging
-
-       # Create deployment reports folder
-       # - name: Create deployment reports folder
-       #   run: mkdir -p deploy_reports
 
        # Run validation against the org    
         - name: Run validation against the org
-          run: |
-            if [ -f delta/package/package.xml ]; then
-              echo "Validating delta components..."
+          id: validate_org
+          run: | #if [ "-f delta/package/package.xml" ]; then
+            if [ "$has_changes" == "true"]; then
+              echo "Validating delta components"
               PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
               if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]]; then
                 sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunLocalTests
@@ -103,25 +102,20 @@ jobs:
               fi
             else
               echo "No changes detected or package.xml not created."
+              exit 0
             fi
-          continue-on-error: true
-          
+          continue-on-error: true 
+
        # Destructive Changes Validation
         - name: Destructive Changes
+          if: steps.validate_org.outcome == 'success' || steps.generate_delta.output.has_changes == 'false'
           run: |
             echo "--- destructiveChanges.xml generated with deleted metadata ---"
             cat delta/destructiveChanges/destructiveChanges.xml
             echo
             if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              PR_DESTRUCTIVE=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
-              if [[ $PR_DESTRUCTIVE = *"DestructiveTest"* ]]; then
-                classdestructive=$(echo $PR_DESTRUCTIVE | grep -E ^DestructiveTest | cut -d" " -f2)
-                echo $classdestructive  
-                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly --testlevel RunSpecifiedTests -r $classdestructive
-              elif [[ $PR_DESTRUCTIVE != *"DestructiveTest"* ]]; then
-                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly
-              fi
+              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
             else
               echo "No destructive changes to deploy."
             fi
