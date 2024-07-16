@@ -104,7 +104,8 @@ jobs:
             else
               echo "No changes detected or package.xml not created."
             fi
-
+          continue-on-error: true
+          
        # Destructive Changes Validation
         - name: Destructive Changes
           run: |
