@@ -2,14 +2,14 @@ name: Salesforce Deployments
 
 on:
   pull_request:
-    types: [edited, reopened, ready_for_review, synchronize, opened]
+    types: [edited, reopened, ready_for_review, synchronize, opened, closed]
     branches: 
       - develop
       - intmerge
       - svtmerge
 
-  pull_request_target:
-    types: [closed]
+  #pull_request_target:
+    #types: [closed]
 
 jobs:
     run_pmd_and_validate:
