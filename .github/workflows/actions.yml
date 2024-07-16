@@ -87,7 +87,7 @@ jobs:
         - name: Run validation against the org
           id: validate_org
           run: | #if [ "-f delta/package/package.xml" ]; then
-            if [ "$has_changes" == "true"]; then
+            if [ "$has_changes" == "true" ]; then
               echo "Validating delta components"
               PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
               if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]]; then
