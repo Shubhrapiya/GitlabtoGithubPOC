@@ -8,8 +8,8 @@ on:
       - intmerge
       - svtmerge
 
-  pull_request_target:
-    types: [closed]
+  #pull_request_target:
+    #types: [closed]
 
 jobs:
     run_pmd_and_validate:
@@ -99,7 +99,7 @@ jobs:
                 cat testclass.csv
                 sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunSpecifiedTests -r 'cat testclass.csv' 
               else
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly 
+                sfdx force:source:deploy -x delta/package/package.xml --checkonly 
               fi
             else
               echo "No changes detected or package.xml not created."
@@ -131,7 +131,6 @@ jobs:
        #if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
        if: github.event.pull_request.merged == true
        runs-on: ubuntu-latest
-       # needs: run_pmd_and_validate
 
        steps:
        # Checkout source code
