@@ -2,7 +2,7 @@ name: Salesforce Deployments
 
 on:
   pull_request:
-    types: [edited, reopened, ready_for_review, synchronize, opened]
+    types: [edited, reopened, ready_for_review, synchronize, opened, closed]
     branches: 
       - develop
       - intmerge
@@ -13,7 +13,7 @@ on:
 
 jobs:
     run_pmd_and_validate:
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && github.event.action != 'closed'
       runs-on: ubuntu-latest
       #env:
         #BRANCH_NAME: ${{ github.head_ref }}
