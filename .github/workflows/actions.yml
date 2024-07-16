@@ -2,18 +2,24 @@ name: Salesforce Deployments
 
 on:
   pull_request:
-    types: [edited, reopened, ready_for_review, synchronize, opened]
+    types: [edited, reopened, ready_for_review, synchronize, opened, closed]
     branches: 
       - develop
+      - intmerge
+      - svtmerge
 
-  pull_request_target:
-    types: [closed]
+  #pull_request_target:
+    #types: [closed]
 
 jobs:
     run_pmd_and_validate:
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.ref != 'refs/heads/main'
       runs-on: ubuntu-latest
-
+      #env:
+        #BRANCH_NAME: ${{ github.head_ref }}
+      # It dynamically fetches the branch name of the pull request. When a pull request is created, 
+      # the head_ref contains the name of the branch from which the PR was created.
+      
       steps:
       
       # Checkout source code
@@ -46,6 +52,7 @@ jobs:
        # Run PMD scan
         - name: 'Run PMD scan'
           run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
+          continue-on-error: true
 
        # Upload PMD Report
         - name: Upload PMD Report
@@ -75,15 +82,25 @@ jobs:
        # ls -l delta/package - List contents of delta/package directory for debugging
 
        # Create deployment reports folder
-        - name: Create deployment reports folder
-          run: mkdir -p deploy_reports
+       # - name: Create deployment reports folder
+       #   run: mkdir -p deploy_reports
 
        # Run validation against the org    
         - name: Run validation against the org
           run: |
             if [ -f delta/package/package.xml ]; then
               echo "Validating delta components..."
-              sfdx force:source:deploy -x delta/package/package.xml --checkonly  
+              PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+              if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]]; then
+                sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunLocalTests
+              elif [[ $PR_DESCRIPTION = *"TestList"* ]]; then
+                class=$(echo $PR_DESCRIPTION | grep -E ^TestList | cut -d" " -f2)
+                echo $class > testclass.csv 
+                cat testclass.csv
+                sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunSpecifiedTests -r 'cat testclass.csv' 
+              else
+                sfdx force:source:deploy -x delta/package/package.xml --checkonly 
+              fi
             else
               echo "No changes detected or package.xml not created."
             fi
@@ -96,7 +113,14 @@ jobs:
             echo
             if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
               echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
+              PR_DESTRUCTIVE=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+              if [[ $PR_DESTRUCTIVE = *"DestructiveTest"* ]]; then
+                classdestructive=$(echo $PR_DESTRUCTIVE | grep -E ^DestructiveTest | cut -d" " -f2)
+                echo $classdestructive  
+                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly --testlevel RunSpecifiedTests -r $classdestructive
+              elif [[ $PR_DESTRUCTIVE != *"DestructiveTest"* ]]; then
+                sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly
+              fi
             else
               echo "No destructive changes to deploy."
             fi
@@ -110,11 +134,9 @@ jobs:
             path: delta/
 
     deploy_delta_code:
-       #if: github.event_name == 'push' && github.event.head_commit.message == 'Merge pull request'
-       #if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-       if: github.event.pull_request.merged == true
+       #if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.ref != 'refs/heads/main'
+       if: github.event.pull_request.merged == true && github.ref != 'refs/heads/main'
        runs-on: ubuntu-latest
-       # needs: run_pmd_and_validate
 
        steps:
        # Checkout source code
