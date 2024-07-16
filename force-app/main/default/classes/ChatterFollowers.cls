@@ -1,3 +1,10 @@
+/**
+ * @description       : 
+ * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+ * @group             : 
+ * @last modified on  : 07-16-2024
+ * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+**/
 global with sharing class ChatterFollowers {
     
     @AuraEnabled
@@ -9,5 +16,6 @@ global with sharing class ChatterFollowers {
         }
         list<user> output = [select id, Name, Title, SmallPhotoUrl from User where id in: userIds];
         return output;
+        //comment added
     }
 }
