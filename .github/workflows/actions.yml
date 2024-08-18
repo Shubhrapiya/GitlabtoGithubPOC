@@ -5,190 +5,165 @@ on:
     types: [edited, ready_for_review, synchronize, opened]
     branches: 
       - develop
-      - intmerge
       - svtmerge
-
-  pull_request_target:
-    types: [closed]
+      - perftest
+      - main
 
 jobs:
-    run_pmd_and_validate:
-      if: github.event_name == 'pull_request'
-      runs-on: ubuntu-latest
-      #env:
-        #BRANCH_NAME: ${{ github.head_ref }}
-      # It dynamically fetches the branch name of the pull request. When a pull request is created, 
-      # the head_ref contains the name of the branch from which the PR was created.
-      
-      steps:
-      
+  validate_and_deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
       # Checkout source code
-        - name: Checkout source code
-          uses: actions/checkout@v4
-          with: 
-           fetch-depth: 0  # Fetch the entire history for accurate delta calculation
-        #fetch-depth: 10  # Fetch the last 10 commit
-      
-      # Install salesforce cli
-        - name: Install salesforce cli
-          run: |
-            npm install sfdx-cli --global
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
 
-      # Authenticate with Salesforce
-        - name: Authenticate with Salesforce
-          run: |
-            echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
-            sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
+      # Install Salesforce CLI
+      - name: Install Salesforce CLI
+        run: npm install sfdx-cli --global
 
-       # Install PMD
-        - name: Install PMD
-          run: |
-            PMD_VERSION=`cat pmd/pmd-version.txt`
-                wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F$PMD_VERSION/pmd-bin-$PMD_VERSION.zip
-                unzip pmd-bin-$PMD_VERSION.zip -d ~
-                mv ~/pmd-bin-$PMD_VERSION ~/pmd
-                ~/pmd/bin/run.sh pmd --version
+      # Determine target branch and authenticate with Salesforce
+      - name: Authenticate with Salesforce based on target branch
+        run: |
+          case "${{ github.event.pull_request.base.ref }}" in
+           "develop")
+              echo ${{ secrets.SFDX_AUTH_URL_DEVELOP }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias develop_org -s
+              ;;
+            "svtmerge")
+              echo ${{ secrets.SFDX_AUTH_URL_SVTMERGE }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias svtmerge_org -s
+              ;;
+            "perftest")
+              echo ${{ secrets.SFDX_AUTH_URL_PERFTEST }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias perftest_org -s
+              ;;
+            "main")
+              echo ${{ secrets.SFDX_AUTH_URL_PRODUCTION }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias production_org -s
+              ;;
+            *)
+              echo "No matching branch found for deployment"
+              exit 1
+              ;;
+          esac
 
-       # Run PMD scan
-        - name: 'Run PMD scan'
-          run: ~/pmd/bin/run.sh pmd -d force-app -R pmd/ruleset.xml -f text
-          continue-on-error: true
+      # Install the sfdx-git-delta plugin
+      - name: Install the sfdx-git-delta plugin
+        run: |
+          echo 'y' | sfdx plugins:install sfdx-git-delta
 
-       # Upload PMD Report
-        - name: Upload PMD Report
-          uses: actions/upload-artifact@v4
-          with:
-            name: pmd-report
-            path: pmd/pmd-report.txt
+      # Generate the package.xml of delta files for validation
+      - name: Generate the package.xml for delta files
+        run: |
+          mkdir -p delta
+          echo "Generating delta package.xml"
+          # Compare the HEAD of the current branch with the target branch
+          sfdx sgd:source:delta --to "HEAD" --from "origin/${{ github.event.pull_request.base.ref }}" --output "./delta" --ignore-whitespace -d -i .sgdignore
+          if [ -f delta/package/package.xml ]; then
+            echo "--- package.xml generated with added and modified metadata ---"
+            cat delta/package/package.xml
+          else
+            echo "No changes detected or package.xml not created"
+          fi
 
-       # Install the sfdx-git-delta plugin     
-        - name: Install the sfdx-git-delta plugin
-          run: |
-            echo 'y' | sfdx plugins:install sfdx-git-delta
-
-       # Generate the package.xml of delta files for validation      
-        - name: Generate the package.xml for delta files
-          run: |
-            mkdir -p delta
-            echo "Generating delta package.xml"
-            git diff --name-only HEAD..origin/develop
-            sfdx sgd:source:delta --to "HEAD" --from "origin/develop" --output "./delta" --ignore-whitespace -d -i .sgdignore
-            if [ -f delta/package/package.xml ]; then
-              echo "--- package.xml generated with added and modified metadata ---"
-              cat delta/package/package.xml
+      # Validate Delta Components
+      - name: Validate Delta Components
+        run: |
+          if [ -f delta/package/package.xml ]; then
+            echo "Validating delta components..."
+            PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
+            if [[ $PR_DESCRIPTION == *"RunLocalTests"* ]]; then
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunLocalTests
+            elif [[ $PR_DESCRIPTION == *"TestList"* ]]; then
+              class=$(echo $PR_DESCRIPTION | grep -E ^TestList | cut -d" " -f2)
+              echo $class > testclass.csv 
+              cat testclass.csv
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunSpecifiedTests -r 'cat testclass.csv' 
             else
-              echo "No changes detected or package.xml not created"
+              sfdx force:source:deploy -x delta/package/package.xml --checkonly
             fi
-       # ls -l delta/package - List contents of delta/package directory for debugging
+          else
+            echo "No changes detected or package.xml not created."
+          fi
 
-       # Create deployment reports folder
-       # - name: Create deployment reports folder
-       #   run: mkdir -p deploy_reports
+      # Validate Destructive Changes
+      - name: Validate Destructive Changes
+        run: |
+          if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
+            echo "Validating destructive changes..."
+            sfdx force:mdapi:deploy -d delta/destructiveChanges --ignorewarnings --checkonly
+          else
+            echo "No destructive changes to validate."
+          fi
+        continue-on-error: true
 
-       # Run validation against the org    
-        - name: Run validation against the org
-          run: |
-            if [ -f delta/package/package.xml ]; then
-              echo "Validating delta components..."
-              PR_DESCRIPTION=$(jq -r ".pull_request.body" "$GITHUB_EVENT_PATH")
-              if [[ $PR_DESCRIPTION = *"RunLocalTests"* ]]; then
-                sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunLocalTests
-              elif [[ $PR_DESCRIPTION = *"TestList"* ]]; then
-                class=$(echo $PR_DESCRIPTION | grep -E ^TestList | cut -d" " -f2)
-                echo $class > testclass.csv 
-                cat testclass.csv
-                sfdx force:source:deploy -x delta/package/package.xml --checkonly --testlevel RunSpecifiedTests -r 'cat testclass.csv' 
-              else
-                sfdx force:source:deploy -x delta/package/package.xml --checkonly 
-              fi
-            else
-              echo "No changes detected or package.xml not created."
-            fi
+      # Deploy Delta Components
+      - name: Deploy Delta Components
+        run: |
+          if [ -f delta/package/package.xml]; then
+            echo "Deploying delta components..."
+            sfdx force:source:deploy -x delta/package/package.xml
+          else
+            echo "No changes detected or package.xml not created."
+          fi
 
-       # Destructive Changes Validation
-        - name: Destructive Changes
-          run: |
-            echo "--- destructiveChanges.xml generated with deleted metadata ---"
-            cat delta/destructiveChanges/destructiveChanges.xml
-            echo
-            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
-              echo "Validating destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings --checkonly  
-            else
-              echo "No destructive changes to deploy."
-            fi
-          continue-on-error: true
+      # Deploy Destructive Changes
+      - name: Deploy Destructive Changes
+        run: |
+          if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
+            echo "Deploying destructive changes..."
+            sfdx force:mdapi:deploy -d delta/destructiveChanges --ignorewarnings
+          else
+            echo "No destructive changes to deploy."
+          fi
+        continue-on-error: true
 
-       #Artifact of delta report    
-        - name: Upload delta folder
-          uses: actions/upload-artifact@v4
-          with:
-            name: delta
-            path: delta/
+      # Upload delta folder for inspection
+      - name: Upload delta folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: delta
+          path: delta/
 
-    deploy_delta_code:
-       #if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.ref != 'refs/heads/main'
-       if: github.event.pull_request.merged == true && github.ref != 'refs/heads/main'
-       runs-on: ubuntu-latest
+  back_promotion_to_avengers_and_conquerors:
+    if: github.event.pull_request.merged == true && (github.ref == 'refs/heads/avengers' || github.ref == 'refs/heads/conquerors')
+    runs-on: ubuntu-latest
 
-       steps:
-       # Checkout source code
-        - name: Checkout source code
-          uses: actions/checkout@v4
-          with: 
-           fetch-depth: 0
+    steps:
+      # Checkout source code
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
 
-       # Install salesforce cli
-        - name: Install salesforce cli
-          run: |
-            npm install sfdx-cli --global
+      # Install Salesforce CLI
+      - name: Install Salesforce CLI
+        run: npm install sfdx-cli --global
 
-       # Authenticate with Salesforce
-        - name: Authenticate with Salesforce
-          run: |
-            echo ${{ secrets.SFDX_AUTH_URL }} > ./authfile.txt
-            sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias target_poc -s
+      # Determine target branch and authenticate with Salesforce
+      - name: Authenticate with Salesforce based on target branch
+        run: |
+          case "${{ github.ref }}" in
+            "refs/heads/avengers")
+              echo ${{ secrets.SFDX_AUTH_URL_AVENGERS }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias avengers_org -s
+              ;;
+            "refs/heads/conquerors")
+              echo ${{ secrets.SFDX_AUTH_URL_CONQUERORS }} > ./authfile.txt
+              sfdx force:auth:sfdxurl:store -f ./authfile.txt --setalias conquerors_org -s
+              ;;
+            *)
+              echo "No matching branch found for full deployment"
+              exit 1
+              ;;
+          esac
 
-       # Install the sfdx-git-delta plugin     
-        - name: Install the sfdx-git-delta plugin
-          run: |
-            echo 'y' | sfdx plugins:install sfdx-git-delta
-
-       # Generate the package.xml of delta files to deploy  
-        - name: Generate the package.xml for delta files
-          run: |
-            mkdir -p delta
-            echo "Generating delta package.xml"
-            git diff --name-only HEAD..HEAD~1
-            sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
-            if [ -f delta/package/package.xml ]; then
-              echo "--- package.xml generated with added and modified metadata ---"
-              cat delta/package/package.xml
-            else
-              echo "No changes detected or package.xml not created"
-            fi
-
-       # Deploy delta code    
-        - name: Deploy delta package
-          run: |
-            if [ -f delta/package/package.xml ]; then
-              echo "Deploying delta components..."
-              sfdx force:source:deploy -x delta/package/package.xml 
-            else
-              echo "No changes detected or package.xml not created."
-            fi
-          continue-on-error: true
-
-       # Deploy Destructive Changes
-        - name: Destructive Changes
-          run: |
-            echo "--- destructiveChanges.xml generated with deleted metadata ---"
-            cat delta/destructiveChanges/destructiveChanges.xml
-            echo
-            if [ -f delta/destructiveChanges/destructiveChanges.xml ]; then
-              echo "Deploying destructive changes..."
-              sfdx force:mdapi:deploy -d delta/destructiveChanges -w 10 --ignorewarnings 
-            else
-              echo "No destructive changes to deploy."
-            fi
-          continue-on-error: true
+      # Full Deployment
+      - name: Full Deployment
+        run: |
+          echo "Deploying all components..."
+          sfdx force:source:deploy -p force-app --testlevel NoTestRun
